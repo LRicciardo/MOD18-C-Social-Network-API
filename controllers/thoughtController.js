@@ -4,6 +4,25 @@ module.exports = {
   // Get all thoughts
   getThoughts(req, res) {
     Thought.find()
+     .select('-__v') 
+     .sort({ createdAt: 'descending' })
+     .populate({
+        path: 'thoughts',
+        select: '-__v'
+      })
+      .populate({
+        path: 'friends',
+        select: '-__v'
+      })
+      .populate({
+        path:'reactions',
+        select: '-__v'
+      })
+      .populate({
+        path: 'user',
+        select: '-__v'
+      })
+
       .then((thoughts) => res.json(thoughts))
       .catch((err) => res.status(500).json(err));
   },
