@@ -1,51 +1,75 @@
 const connection = require('../config/connection');
-const { Course, Student } = require('../models');
-const { getRandomName, getRandomAssignments } = require('./data');
+const { Thought, User } = require('../models');
+const {   getRandomName, 
+  getRandomThought, 
+  getRandomReaction, 
+  getRandomEmailEnding,
+  getRandomArrItem, 
+  getRandomNumber } = require('./data');
 
 connection.on('error', (err) => err);
 
 connection.once('open', async () => {
   console.log('connected');
 
-  // Drop existing courses
-  await Course.deleteMany({});
+  // Drop existing thoughts
+  await Thought.deleteMany({});
 
-  // Drop existing students
-  await Student.deleteMany({});
+  // Drop existing users
+  await User.deleteMany({});
 
-  // Create empty array to hold the students
-  const students = [];
+  
+  // seed all users
+  // Create empty array to hold the users
+  const users = [];
+  // Create empty array to hold the thoughts
+  const thoughts = [];
 
-  // Loop 20 times -- add students to the students array
+  // Loop 20 times -- add users to the users array
   for (let i = 0; i < 20; i++) {
-    // Get some random assignment objects using a helper function that we imported from ./data
-    const assignments = getRandomAssignments(20);
+    
+    const userData = {
+      username: `${getRandomName()}${getRandomNumber(99)}`,
+      email: `${userData.username}${getRandomEmailEnding()}`,
+    }
+   
+    users.push(userData);
 
-    const fullName = getRandomName();
-    const first = fullName.split(' ')[0];
-    const last = fullName.split(' ')[1];
-    const github = `${first}${Math.floor(Math.random() * (99 - 18 + 1) + 18)}`;
 
-    students.push({
-      first,
-      last,
-      github,
-      assignments,
-    });
-  }
+  };
+  
+  // Add users to the collection and await the results
+  await User.collection.insertMany(users);
+  
+  // seed all thoughts
+  // Create an array of users
+  users = await User.find({});
+  // add 5 thoughts to the thoughts array for each user
+  for (let i = 0; i < users.length; i++) {
+    // const thoughts = [];
+     
+    for(let j = 0; j < 5; j++) {
 
-  // Add students to the collection and await the results
-  await Student.collection.insertMany(students);
-
-  // Add courses to the collection and await the results
-  await Course.collection.insertOne({
-    courseName: 'UCLA',
-    inPerson: false,
-    students: [...students],
-  });
+    const thoughtData = {
+      thoughtText: `${getRandomNumber(99)} ${getRandomThought()}`,
+      username: users[i]._id,
+      reactions: [],
+      };
+      thoughts.push(thoughtData);
+    }
+  } 
+  
+  await Thought.collection.insertMany(thoughts);
+  // Create an updated array of users
+  users = await User.find({});
+  console.log(users)
+  // Create an updated array of thoughts
+  thoughts = await Thought.find({});
+  console.log(thoughts)
 
   // Log out the seed data to indicate what should appear in the database
-  console.table(students);
+  console.table(users);
+  console.table(thoughts);
   console.info('Seeding complete! 🌱');
   process.exit(0);
 });

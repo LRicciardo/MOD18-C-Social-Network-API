@@ -4,25 +4,16 @@ module.exports = {
   // Get all thoughts
   getThoughts(req, res) {
     Thought.find()
-     .select('-__v') 
-     .sort({ createdAt: 'descending' })
-     .populate({
-        path: 'thoughts',
-        select: '-__v'
-      })
-      .populate({
-        path: 'friends',
-        select: '-__v'
-      })
+      .select('-__v') 
+      .sort({ createdAt: 'descending' })
       .populate({
         path:'reactions',
         select: '-__v'
-      })
-      .populate({
+      },
+      {
         path: 'user',
         select: '-__v'
       })
-
       .then((thoughts) => res.json(thoughts))
       .catch((err) => res.status(500).json(err));
   },
@@ -40,7 +31,21 @@ module.exports = {
   // Create a thought
   createThought(req, res) {
     Thought.create(req.body)
-      .then((thought) => res.json(thought))
+      .then((thought) => {
+      return User.findOneAndUpdate(
+        { _id: req.body.userId },
+        { $push: { thoughts: thought._id } },
+        { new: true }
+        );
+      })
+      .then((user) => 
+        !user
+        ? res.status(404).json({ message: 'No user with that ID' })
+        : res.json(user)
+      )
+
+      
+      res.json(thought))
       .catch((err) => {
         console.log(err);
         return res.status(500).json(err);
@@ -68,6 +73,41 @@ module.exports = {
         !thought
           ? res.status(404).json({ message: 'No thought with this id!' })
           : res.json(thought)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+
+  // Add an reaction to a user
+  async addReaction(req, res) {
+    // console.log('You are adding a reaction');
+    // console.log(req.body);
+    await User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $addToSet: { reactions: req.body } },
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res
+              .status(404)
+              .json({ message: 'No user found with that ID :(' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  // Remove reaction from a user
+  async removeReaction(req, res) {
+    await User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $pull: { reaction: { reactionId: req.params.reactionId } } },
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res
+              .status(404)
+              .json({ message: 'No user found with that ID :(' })
+          : res.json(user)
       )
       .catch((err) => res.status(500).json(err));
   },

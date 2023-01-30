@@ -1,45 +1,34 @@
 // ObjectId() method for converting userId string into an ObjectId for querying database
-const { ObjectId } = require('mongoose').Types;
-const { User, Thought } = require('../models');
+const { ObjectId } = require("mongoose").Types;
+const { User, Thought } = require("../models");
 
-// TODO: Create an aggregate function to get the number of users overall
-const headCount = async () =>
+// an aggregate function to get the number of users overall
+const userCount = async () =>
   User.aggregate()
     .count("numberOfUsers")
     .then((numberOfUsers) => numberOfUsers);
 
-// Execute the aggregate method on the User model and calculate the overall grade by using the $avg operator
-const grade = async (userId) =>
-  User.aggregate([
-    // TODO: Ensure we include only the user who can match the given ObjectId using the $match operator
-    {
-      // Your code here
-    $match: {_id: ObjectId(userId), },
-    },
-    {
-      // Your code here
-    $group: { _id: ObjectId(userId), average: {$avg: '$GPA'}},
-    },
-    {
-      $unwind: '$reactions',
-    },
-    // TODO: Group information for the user with the given ObjectId alongside an overall grade calculated using the $avg operator
-    {
-      // Your code here
-    $group: { _id: ObjectId(userId), average: {$avg: '$GPA'}},
-    },
-  ]);
-
 module.exports = {
   // Get all users
-  getUsers(req, res) {
-    User.find()
+  async getUsers(req, res) {
+    await User.find({})
+      .select("-__v")
+      .populate([
+        {
+          path: "thoughts",
+          select: "-__v"
+        },
+        {
+          path: "friends",
+          select: "-__v"
+        }
+      ])
       .then(async (users) => {
-        const userObj = {
-          users,
-          headCount: await headCount(),
+        const allUsers = {
+          userCount: await userCount(),
+          ...users
         };
-        return res.json(userObj);
+        return res.json(allUsers);
       })
       .catch((err) => {
         console.log(err);
@@ -47,86 +36,146 @@ module.exports = {
       });
   },
   // Get a single user
-  getSingleUser(req, res) {
-    User.findOne({ _id: req.params.userId })
-      .select('-__v')
-      .lean()
-      .then(async (user) =>
-        !user
-          ? res.status(404).json({ message: 'No user with that ID' })
-          : res.json({
-              user,
-              grade: await grade(req.params.userId),
-            })
-      )
+  async getSingleUser(req, res) {
+    await User.findOne({
+      _id: req.params.userId
+    })
+      .select("-__v")
+      .populate([
+        {
+          path: "thoughts",
+          select: "-__v"
+        },
+        {
+          path: "friends",
+          select: "-__v"
+        }
+      ])
+      .then((user) => {
+        if (!user) {
+          res.status(404).json({ message: "No user with that ID" });
+        }
+        return res.status(200).json(user);
+      })
       .catch((err) => {
         console.log(err);
         return res.status(500).json(err);
       });
   },
   // create a new user
-  createUser(req, res) {
-    User.create(req.body)
-      .then((user) => res.json(user))
+  async createUser(req, res) {
+    await User.create({
+      username: req.body.username,
+      email: req.body.email
+    })
+      .then((user) => res.status(200).json(user))
       .catch((err) => res.status(500).json(err));
-  },
-  // Delete a user and remove them from the thought
-  deleteUser(req, res) {
-    User.findOneAndRemove({ _id: req.params.userId })
-      .then((user) =>
-        !user
-          ? res.status(404).json({ message: 'No such user exists' })
-          : Thought.findOneAndUpdate(
-              { users: req.params.userId },
-              { $pull: { users: req.params.userId } },
-              { new: true }
-            )
-      )
-      .then((thought) =>
-        !thought
-          ? res.status(404).json({
-              message: 'User deleted, but no thoughts found',
-            })
-          : res.json({ message: 'User successfully deleted' })
-      )
-      .catch((err) => {
-        console.log(err);
-        res.status(500).json(err);
-      });
   },
 
-  // Add an reaction to a user
-  addAssignment(req, res) {
-    console.log('You are adding a reaction');
-    console.log(req.body);
-    User.findOneAndUpdate(
+  // Add an friend to a user
+  async addFriend(req, res) {
+    // console.log('You are adding a friend');
+    // console.log(req.body);
+    await User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $addToSet: { reactions: req.body } },
+      // add the friend to the user friends array
+      // (addToSet will not add if already in array) 
+      { $addToSet: { friends: req.params.friendId } },
       { runValidators: true, new: true }
     )
+      .select("-__v")
+      .populate([
+        {
+          path: "thoughts",
+          select: "-__v"
+        },
+        {
+          path: "friends",
+          select: "-__v"
+        }
+      ])
       .then((user) =>
         !user
-          ? res
-              .status(404)
-              .json({ message: 'No user found with that ID :(' })
-          : res.json(user)
+          ? res.status(404).json({ message: "No User found with that id" })
+          : res.status(200).json({ message: "Friend added to User" }, user)
       )
       .catch((err) => res.status(500).json(err));
   },
-  // Remove reaction from a user
-  removeAssignment(req, res) {
-    User.findOneAndUpdate(
+
+    // Delete a user and remove them from the thought
+    async updateSingleUser(req, res) {
+      await User.findOneAndDelete({ _id: req.params.userId },
+          { $set: req.body,},
+          { runValidators: true, new: true })
+        .then((user) => {
+          if (!user) {
+            res.status(404).json({ message: "No such user exists" });
+          }
+          res
+            .status(200)
+            .json(user, {
+              message: "User successfully updated"
+            })
+        )
+        .catch((err) => {
+          console.log(err);
+          res.status(500).json(err);
+        });
+    },
+
+    // Delete a user and remove them from the thought
+    async deleteUser(req, res) {
+      await User.findOneAndDelete({ _id: req.params.userId })
+        .then((user) => {
+          if (!user) {
+            res.status(404).json({ message: "No such user exists" });
+          }
+          return Thought.deleteMany({
+            _id: {
+              $in: user.thoughts
+            }
+          });
+        })
+        .then((thought) =>
+          !thought
+            ? res
+                .status(250)
+                .json({ message: "User deleted, but no thoughts found" })
+            : res
+                .status(200)
+                .json({
+                  message: "User and associated thoughts successfully deleted"
+                })
+        )
+        .catch((err) => {
+          console.log(err);
+          res.status(500).json(err);
+        });
+    },
+  // Remove friend from a user
+  async removeFriend(req, res) {
+    await User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $pull: { reaction: { reactionId: req.params.reactionId } } },
+      // pull the friend to the user friends array
+      { $pull: { friends: req.params.friendId } },
       { runValidators: true, new: true }
     )
+      .select("-__v")
+      .populate([
+        {
+          path: "thoughts",
+          select: "-__v"
+        },
+        {
+          path: "friends",
+          select: "-__v"
+        }
+      ])
       .then((user) =>
         !user
-          ? res
-              .status(404)
-              .json({ message: 'No user found with that ID :(' })
-          : res.json(user)
+          ? res.status(404).json({ message: "No User found with that id" })
+          : res.status(200).json({ message: "Friend removed from User" }, user)
       )
       .catch((err) => res.status(500).json(err));
-  },
+  }
 };
