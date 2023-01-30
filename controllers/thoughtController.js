@@ -43,14 +43,12 @@ module.exports = {
         ? res.status(404).json({ message: 'No user with that ID' })
         : res.json(user)
       )
-
-      
-      res.json(thought))
       .catch((err) => {
         console.log(err);
         return res.status(500).json(err);
       });
   },
+  
   // Delete a thought
   deleteThought(req, res) {
     Thought.findOneAndDelete({ _id: req.params.thoughtId })
