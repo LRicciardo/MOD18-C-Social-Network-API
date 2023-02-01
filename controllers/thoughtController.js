@@ -1,26 +1,32 @@
 const { Thought, User, Reaction } = require("../models");
 
+// an aggregate function to get the number of users overall
+const thoughtCount = async () =>
+  Thought.aggregate()
+    .count("numberOfThoughts")
+    .then((numberOfThoughts) => numberOfThoughts);
+
 module.exports = {
   // Get all thoughts
   async getThoughts(req, res) {
     await Thought.find({})
       .select("-__v")
       .sort({ createdAt: "descending" })
-      // .populate(
-      //   // {
-      //   //   path: "reactions",
-      //   //   select: "-__v"
-      //   // },
-      //   {
-      //     path: "user",
-      //     select: "-__v"
-      //   }
-      // )
-      .then((thoughts) =>
-        !thoughts
-          ? res.status(404).json({ message: "No thoughts" })
-          : res.status(200).json(thoughts)
-      )
+      // .then((thoughts) => {
+      //   !thoughts
+      //     ? res.status(404).json({ message: "No thoughts" })
+      //     : res.status(200).json(thoughts)
+      // })
+      .then(async (thoughts) => {
+        if (!thoughts) {
+          return res.status(404).json({ message: "No thoughts" });
+        }
+        const allThoughts = {
+          thoughtCount: await thoughtCount(),
+          ...thoughts
+        };
+        return res.status(200).json(allThoughts);
+      })
       .catch((err) => res.status(500).json(err));
   },
   // Get a thought
@@ -70,9 +76,7 @@ module.exports = {
           ? res.status(404).json({
               message: "Thought created but couldn't find the user ID(?)"
             })
-          : res
-              .status(200)
-              .json({ message: "Thought successfully deleted!" })
+          : res.status(200).json({ message: "Thought successfully deleted!" })
       )
       .catch((err) => res.status(500).json(err));
   },
@@ -107,26 +111,31 @@ module.exports = {
     )
       .then((thought) =>
         !thought
-          ? res.status(404).json({ message: "No user found with that ID :(" })
+          ? res
+              .status(404)
+              .json({ message: "No thought found with that ID :(" })
           : res.status(200).json(thought)
       )
       .catch((err) => res.status(500).json(err));
   },
-  // Remove reaction from a user
+  // Remove reaction from a thought
   async removeReaction(req, res) {
     await Thought.findOneAndUpdate(
       { _id: req.params.ThoughtId },
-      { $pull: { 
-          reactions: { 
-            reactionId: req.params.reactionId 
-          } 
-        } 
+      {
+        $pull: {
+          reactions: {
+            reactionId: req.params.reactionId
+          }
+        }
       },
       { new: true }
     )
       .then((thought) =>
         !thought
-          ? res.status(404).json({ message: "No user found with that ID :(" })
+          ? res
+              .status(404)
+              .json({ message: "No thought found with that ID :(" })
           : res.status(200).json(thought)
       )
       .catch((err) => res.status(500).json(err));

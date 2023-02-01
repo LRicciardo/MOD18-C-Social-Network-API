@@ -1,7 +1,7 @@
 const connection = require('../config/connection');
 // const cTable = require('console.table');
 const { Thought, User, Reaction } = require('../models');
-const {   getRandomName, 
+const {   getUsersArr,
   getRandomThought, 
   getRandomReaction, 
   getRandomEmailEnding,
@@ -23,21 +23,8 @@ connection.once('open', async () => {
   
   // seed all users
   // Create empty array to hold the users
-  let users = [];
-  // Create empty array to hold the thoughts
-  let thoughts = [];
-  
-  // Loop 20 times -- add users to the users array
-  for (let i = 0; i < 20; i++) {
-    
-    const username = `${getRandomName()}${getRandomNumber(99)}`;
-    const email = `${username}${getRandomEmailEnding()}`
-    
-    users.push({
-      username: username,
-      email: email
-    });
-  };
+  let users = getUsersArr();
+  console.log(users);
   
   // Add users to the collection and await the results
   await User.collection.insertMany(users);
