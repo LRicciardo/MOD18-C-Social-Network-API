@@ -97,24 +97,25 @@ The following video shows the application being used from Insomnia app:
 
 DEMO video 1: The GET functions for Users and Thoughts collections.
 
-[![A DEMO video 1: The GET functions for Users and Thought collections.](./assets/18-nosql-homework-demo-01.gif)](https://drive.google.com/file/d/1-ChrH9NOEWzQyPIfhW-zl0HFe7Zm80KC/view?usp=share_link)
+[![A DEMO video 1: The GET functions for Users and Thought collections.](./assets/18-nosql-homework-demo-01.gif)](https://drive.google.com/file/d/1LQAs72pn20lpKHoluigqOqtGrxclS1Ak/view?usp=share_link)
 
 ***
 
 A DEMO video 2: The GET by Id functions for Users and Thoughts collections.
 
-[![A DEMO video 2: The GET by Id functions for Users and Thoughts collections.](./assets/18-nosql-homework-demo-02.gif)](https://drive.google.com/file/d/1dmQe1YpSUbcl8dGH-m9CDf4-FJksNojM/view?usp=share_link)
+[![A DEMO video 2: The GET by Id functions for Users and Thoughts collections.](./assets/18-nosql-homework-demo-02.gif)](https://drive.google.com/file/d/1wRF4tuG8EaMQY28gqqC9n_gDmT0Qt8Dv/view?usp=share_link)
 
 ***
 
 A DEMO video 3: The POST, PUT and DELETE functions for Users and Thoughts collections.
 
-[![A DEMO video 3: The POST, PUT and DELETE functions for Users and Thoughts collections.](./assets/18-nosql-homework-demo-03.gif)](https://drive.google.com/file/d/1BXKKZZqOBH0nvKGfsKHHius-8LXPyVN9/view?usp=share_link)
+[![A DEMO video 3: The POST, PUT and DELETE functions for Users and Thoughts collections.](./assets/18-nosql-homework-demo-03.gif)](https://drive.google.com/file/d/17lYjLqblaYK2iuG0fga-A8BtwFn4ZnDv/view?usp=share_link)
+
 ***
 
 A DEMO video 4: The POST and DELETE functions for friends and Reactions subdocuments.
 
-[![A DEMO video 3: The POST and DELETE functions for friends and Reactions subdocuments.](./assets/18-nosql-homework-demo-04.gif)](https://drive.google.com/file/d/1BXKKZZqOBH0nvKGfsKHHius-8LXPyVN9/view?usp=share_link)
+[![A DEMO video 3: The POST and DELETE functions for friends and Reactions subdocuments.](./assets/18-nosql-homework-demo-04.gif)](https://drive.google.com/file/d/1a88pvyDdRSpSQ4iwKXFlfm1tUmbzG9ni/view?usp=share_link)
 
 
 ## Installation
