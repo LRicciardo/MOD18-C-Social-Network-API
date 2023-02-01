@@ -30,10 +30,7 @@ module.exports = {
         };
         return res.json(allUsers);
       })
-      .catch((err) => {
-        console.log(err);
-        return res.status(500).json(err);
-      });
+      .catch((err) =>  res.status(500).json(err));
   },
   // Get a single user
   async getSingleUser(req, res) {
@@ -72,15 +69,14 @@ module.exports = {
       .catch((err) => res.status(500).json(err));
   },
 
-  // Add an friend to a user
-  async addFriend(req, res) {
-    // console.log('You are adding a friend');
-    // console.log(req.body);
+  // Delete a user and remove them from the thought
+  async updateSingleUser(req, res) {
     await User.findOneAndUpdate(
       { _id: req.params.userId },
-      // add the friend to the user friends array
-      // (addToSet will not add if already in array) 
-      { $addToSet: { friends: req.params.friendId } },
+      {
+        username: req.body.username,
+        email: req.body.email
+      },
       { runValidators: true, new: true }
     )
       .select("-__v")
@@ -96,62 +92,63 @@ module.exports = {
       ])
       .then((user) =>
         !user
+          ? res.status(404).json({ message: "No such user exists" })
+          // : res.status(200).json({ message: "User successfully updated" })
+          : res.status(200).json(user)
+      )
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json(err);
+      });
+  },
+
+  // Delete a user and remove them from the thought
+  async deleteUser(req, res) {
+    await User.findOneAndDelete({ _id: req.params.userId })
+      .then((user) => {
+        if (!user) {
+          res.status(404).json({ message: "No such user exists" });
+        }
+        return Thought.deleteMany({
+          _id: {
+            $in: user.thoughts
+          }
+        });
+      })
+      .then((thought) =>
+        !thought
+          ? res
+              .status(250)
+              .json({ message: "User deleted, but no thoughts found" })
+          : res.status(200).json({
+              message: "User and associated thoughts successfully deleted"
+            })
+      )
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json(err);
+      });
+  },
+
+  // Add an friend to a user
+  async addFriend(req, res) {
+    await User.findOneAndUpdate(
+      { _id: req.params.userId },
+      // add the friend to the user friends array
+      // (addToSet will not add if already in array)
+      { $addToSet: { friends: req.params.friendId } },
+      { runValidators: true, new: true }
+    )
+      .select("-__v")
+      .then((user) =>
+        !user
           ? res.status(404).json({ message: "No User found with that id" })
-          : res.status(200).json({ message: "Friend added to User" }, user)
+          // : res.status(200).json({ message: "Friend added to User" })
+          : res.status(200).json(user)
       )
       .catch((err) => res.status(500).json(err));
   },
 
-    // Delete a user and remove them from the thought
-    async updateSingleUser(req, res) {
-      await User.findOneAndDelete({ _id: req.params.userId },
-          { $set: req.body,},
-          { runValidators: true, new: true })
-        .then((user) => {
-          if (!user) {
-            res.status(404).json({ message: "No such user exists" });
-          }
-          res
-            .status(200)
-            .json(user, {
-              message: "User successfully updated"
-            })
-        )
-        .catch((err) => {
-          console.log(err);
-          res.status(500).json(err);
-        });
-    },
-
-    // Delete a user and remove them from the thought
-    async deleteUser(req, res) {
-      await User.findOneAndDelete({ _id: req.params.userId })
-        .then((user) => {
-          if (!user) {
-            res.status(404).json({ message: "No such user exists" });
-          }
-          return Thought.deleteMany({
-            _id: {
-              $in: user.thoughts
-            }
-          });
-        })
-        .then((thought) =>
-          !thought
-            ? res
-                .status(250)
-                .json({ message: "User deleted, but no thoughts found" })
-            : res
-                .status(200)
-                .json({
-                  message: "User and associated thoughts successfully deleted"
-                })
-        )
-        .catch((err) => {
-          console.log(err);
-          res.status(500).json(err);
-        });
-    },
   // Remove friend from a user
   async removeFriend(req, res) {
     await User.findOneAndUpdate(
@@ -174,7 +171,7 @@ module.exports = {
       .then((user) =>
         !user
           ? res.status(404).json({ message: "No User found with that id" })
-          : res.status(200).json({ message: "Friend removed from User" }, user)
+          : res.status(200).json(user)
       )
       .catch((err) => res.status(500).json(err));
   }
